@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Jadwal SO Rak Alfamart Premium</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Inter,sans-serif;
+  background:#f3f4f6;
+  color:#1f2937;
+}
+.header{
+  background:#E30613;
+  color:white;
+}
+.card{
+  background:white;
+  border-radius:16px;
+  box-shadow:0 3px 15px rgba(0,0,0,.07);
+}
+.stat{
+  transition:.2s;
+}
+.stat:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 22px rgba(0,0,0,.1);
+}
+.btn{
+  transition:.2s;
+}
+.btn:hover{
+  transform:translateY(-1px);
+}
+.table-wrap{
+  overflow:auto;
+  max-height:650px;
+}
+table{
+  border-collapse:separate;
+  border-spacing:0;
+  min-width:2200px;
+}
+th{
+  position:sticky;
+  top:0;
+  z-index:5;
+  background:#991b1b;
+  color:white;
+  white-space:nowrap;
+}
+td{
+  white-space:nowrap;
+  border-bottom:1px solid #e5e7eb;
+}
+tr:hover td{
+  background:#fff7f7;
+}
+.badge{
+  display:inline-flex;
+  padding:4px 9px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:800;
+}
+.done{
+  background:#dcfce7;
+  color:#15803d;
+}
+.belum{
+  background:#fee2e2;
+  color:#b91c1c;
+}
+.naik{
+  background:#fee2e2;
+  color:#dc2626;
+}
+.turun{
+  background:#dcfce7;
+  color:#15803d;
+}
+.stabil{
+  background:#e5e7eb;
+  color:#4b5563;
+}
+.modal-bg{
+  background:rgba(0,0,0,.55);
+  backdrop-filter:blur(4px);
+}
+input,select{
+  outline:none;
+}
+input:focus,select:focus{
+  border-color:#E30613!important;
+  box-shadow:0 0 0 3px rgba(227,6,19,.1);
+}
+.progress{
+  height:12px;
+  background:#e5e7eb;
+  border-radius:99px;
+  overflow:hidden;
+}
+.progress-bar{
+  height:100%;
+  background:#E30613;
+  transition:.4s;
+}
+@media(max-width:640px){
+  .mobile-grid{grid-template-columns:1fr 1fr}
+  .stat-title{font-size:10px}
+  .stat-value{font-size:18px}
+}
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<header class="header shadow-lg">
+  <div class="max-w-[1500px] mx-auto px-4 py-4">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div>
+        <h1 class="text-xl md:text-2xl font-extrabold">
+          JADWAL SO RAK ALFAMART
+        </h1>
+        <p class="text-xs md:text-sm opacity-90">
+          Dashboard Stock Opname • Premium
+        </p>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="exportCSV()"
+          class="btn bg-white text-red-600 px-4 py-2 rounded-xl font-bold text-sm">
+          📥 Export CSV
+        </button>
+        <button onclick="resetData()"
+          class="btn bg-red-800 text-white px-4 py-2 rounded-xl font-bold text-sm">
+          ♻️ Reset
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-[1500px] mx-auto p-3 md:p-5">
+
+<!-- DASHBOARD -->
+<section class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+
+  <div class="card stat p-4">
+    <p class="text-xs text-gray-500 font-bold">TOTAL RAK</p>
+    <p id="totalRak" class="text-2xl font-extrabold text-red-600 mt-1">0</p>
+  </div>
+
+  <div class="card stat p-4">
+    <p class="text-xs text-gray-500 font-bold">SELESAI SO</p>
+    <p id="selesai" class="text-2xl font-extrabold text-green-600 mt-1">0</p>
+    <p id="persen" class="text-xs text-gray-500 mt-1">0%</p>
+  </div>
+
+  <div class="card stat p-4">
+    <p class="text-xs text-gray-500 font-bold">BELUM SO</p>
+    <p id="belum" class="text-2xl font-extrabold text-orange-500 mt-1">0</p>
+  </div>
+
+  <div class="card stat p-4">
+    <p class="text-xs text-gray-500 font-bold">SELISIH BULAN INI</p>
+    <p id="totalSelisih" class="text-xl font-extrabold mt-1">Rp 0</p>
+  </div>
+
+  <div class="card stat p-4">
+    <p class="text-xs text-gray-500 font-bold">RAK SELISIH TERBESAR</p>
+    <p id="rakTerbesar" class="font-extrabold text-red-600 mt-1">-</p>
+    <p id="rakTerbesarNominal" class="text-xs text-gray-500">Rp 0</p>
+  </div>
+
+  <div class="card stat p-4">
+    <p class="text-xs text-gray-500 font-bold">PLU SELISIH TERBESAR</p>
+    <p id="pluTerbesar" class="font-extrabold text-red-600 mt-1">-</p>
+    <p id="pluTerbesarNominal" class="text-xs text-gray-500">Rp 0</p>
+  </div>
+
+  <div class="card stat p-4">
+    <p class="text-xs text-gray-500 font-bold">BTK</p>
+    <p id="btkCard" class="text-xl font-extrabold mt-1">Rp 0</p>
+  </div>
+
+  <div class="card stat p-4">
+    <p class="text-xs text-gray-500 font-bold">NSB FINAL</p>
+    <p id="nsbCard" class="text-xl font-extrabold mt-1">Rp 0</p>
+    <span id="nsbStatus" class="badge stabil mt-1">AMAN</span>
+  </div>
+
+</section>
+
+<!-- PROGRESS -->
+<section class="card p-4 mb-5">
+  <div class="flex justify-between items-center mb-2">
+    <div>
+      <h2 class="font-extrabold">Progress Stock Opname</h2>
+      <p id="progressText" class="text-xs text-gray-500">
+        0 dari 143 rak
+      </p>
+    </div>
+    <strong id="progressPercent" class="text-red-600">0%</strong>
+  </div>
+  <div class="progress">
+    <div id="progressBar" class="progress-bar" style="width:0%"></div>
+  </div>
+</section>
+
+<!-- NSB BTK -->
+<section class="card p-4 mb-5">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h2 class="font-extrabold text-lg">🧮 Kalkulator NSB & BTK</h2>
+      <p class="text-xs text-gray-500">
+        Perhitungan otomatis berdasarkan data SO
+      </p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+
+    <div>
+      <label class="text-xs font-bold text-gray-500">NET SALES</label>
+      <input id="netSales" type="number" value="150000000"
+        oninput="updateDashboard()"
+        class="w-full mt-1 border rounded-xl p-3">
+    </div>
+
+    <div>
+      <label class="text-xs font-bold text-gray-500">BTSB (%)</label>
+      <input id="btsb" type="number" step="0.01" value="0.14"
+        oninput="updateDashboard()"
+        class="w-full mt-1 border rounded-xl p-3">
+    </div>
+
+    <div>
+      <label class="text-xs font-bold text-gray-500">BTK</label>
+      <div id="btkValue"
+        class="mt-1 bg-gray-100 rounded-xl p-3 font-bold">
+        Rp 0
+      </div>
+    </div>
+
+    <div>
+      <label class="text-xs font-bold text-gray-500">NSB MANUAL</label>
+      <input id="nsbManual" type="number" value="500000"
+        oninput="updateDashboard()"
+        class="w-full mt-1 border rounded-xl p-3">
+    </div>
+
+    <div>
+      <label class="text-xs font-bold text-gray-500">TOTAL SELISIH BARANG</label>
+      <div id="selisihBarang"
+        class="mt-1 bg-gray-100 rounded-xl p-3 font-bold">
+        Rp 0
+      </div>
+    </div>
+
+  </div>
+
+  <div class="mt-4 p-4 rounded-xl bg-gray-50 border">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+      <div>
+        <p class="text-xs text-gray-500 font-bold">NSB FINAL</p>
+        <p id="nsbFinal" class="text-2xl font-extrabold">Rp 0</p>
+      </div>
+      <div>
+        <span id="nsbBadge" class="badge stabil">AMAN</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CHARTS -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
+
+  <div class="card p-4">
+    <h3 class="font-extrabold mb-3">📊 Progress SO</h3>
+    <div class="h-[280px]">
+      <canvas id="progressChart"></canvas>
+    </div>
+  </div>
+
+  <div class="card p-4">
+    <h3 class="font-extrabold mb-3">📈 Bulan Lalu vs Bulan Ini</h3>
+    <div class="h-[280px]">
+      <canvas id="compareChart"></canvas>
+    </div>
+  </div>
+
+  <div class="card p-4">
+    <h3 class="font-extrabold mb-3">📌 Status Rak</h3>
+    <div class="h-[280px]">
+      <canvas id="statusChart"></canvas>
+    </div>
+  </div>
+
+  <div class="card p-4">
+    <h3 class="font-extrabold mb-3">💰 Selisih</h3>
+    <div class="h-[280px]">
+      <canvas id="selisihChart"></canvas>
+    </div>
+  </div>
+
+</section>
+
+<!-- TOP 5 -->
+<section class="card p-4 mb-5">
+  <div class="flex items-center justify-between mb-3">
+    <div>
+      <h2 class="font-extrabold text-lg">🔥 Top 5 Selisih Negatif Terbesar</h2>
+      <p class="text-xs text-gray-500">Berdasarkan Selisih Ini Rp</p>
+    </div>
+  </div>
+
+  <div class="overflow-auto">
+    <table class="w-full min-w-[900px] text-sm">
+      <thead>
+        <tr>
+          <th class="p-3 text-left">#</th>
+          <th class="p-3 text-left">Rak</th>
+          <th class="p-3 text-left">Nama Rak</th>
+          <th class="p-3 text-left">PLU</th>
+          <th class="p-3 text-left">Barang</th>
+          <th class="p-3 text-right">Qty</th>
+          <th class="p-3 text-right">Selisih Rp</th>
+          <th class="p-3 text-left">PIC</th>
+        </tr>
+      </thead>
+      <tbody id="top5Body"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- FILTER -->
+<section class="card p-4 mb-4">
+  <div class="flex flex-col lg:flex-row gap-3">
+
+    <input id="search"
+      oninput="renderTable()"
+      placeholder="🔎 Cari kode rak / nama rak..."
+      class="border rounded-xl p-3 flex-1">
+
+    <select id="filterStatus"
+      onchange="renderTable()"
+      class="border rounded-xl p-3">
+      <option value="">Semua Status</option>
+      <option value="NAIK">NAIK</option>
+      <option value="TURUN">TURUN</option>
+      <option value="STABIL">STABIL</option>
+      <option value="BELUM">BELUM</option>
+    </select>
+
+    <select id="filterPIC"
+      onchange="renderTable()"
+      class="border rounded-xl p-3">
+      <option value="">Semua PIC</option>
+    </select>
+
+    <button onclick="exportCSV()"
+      class="btn bg-red-600 text-white rounded-xl px-5 py-3 font-bold">
+      📥 Export CSV
+    </button>
+
+  </div>
+
+  <div class="mt-3 text-xs text-gray-500">
+    Menampilkan <b id="showCount">0</b> rak
+  </div>
+</section>
+
+<!-- MAIN TABLE -->
+<section class="card overflow-hidden">
+  <div class="p-4 border-b">
+    <h2 class="font-extrabold text-lg">📋 Data Stock Opname Rak</h2>
+    <p class="text-xs text-gray-500">
+      Klik baris untuk mengedit data SO
+    </p>
+  </div>
+
+  <div class="table-wrap">
+    <table class="text-xs w-full">
+      <thead>
+        <tr>
+          <th rowspan="2" class="p-3">No</th>
+          <th rowspan="2" class="p-3">Kode Rak</th>
+          <th rowspan="2" class="p-3">Nama Rak</th>
+          <th rowspan="2" class="p-3">PIC</th>
+          <th rowspan="2" class="p-3">Tgl SO</th>
+
+          <th colspan="3" class="p-3 border-l border-red-400">
+            BULAN LALU
+          </th>
+
+          <th colspan="3" class="p-3 border-l border-red-400">
+            BULAN INI
+          </th>
+
+          <th colspan="3" class="p-3 border-l border-red-400">
+            ANALISIS
+          </th>
+
+          <th colspan="4" class="p-3 border-l border-red-400">
+            DETAIL PLU
+          </th>
+        </tr>
+
+        <tr>
+          <th class="p-3">Sistem</th>
+          <th class="p-3">Fisik</th>
+          <th class="p-3">Selisih</th>
+
+          <th class="p-3">Sistem</th>
+          <th class="p-3">Fisik</th>
+          <th class="p-3">Selisih</th>
+
+          <th class="p-3">Perbandingan</th>
+          <th class="p-3">Status</th>
+          <th class="p-3">% Perubahan</th>
+
+          <th class="p-3">PLU</th>
+          <th class="p-3">Nama Barang</th>
+          <th class="p-3">Qty</th>
+          <th class="p-3">Selisih Rp</th>
+        </tr>
+      </thead>
+
+      <tbody id="mainBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<footer class="text-center text-xs text-gray-400 py-6">
+  Jadwal SO Rak Alfamart Premium • LocalStorage • 1 File HTML
+</footer>
+
+</main>
+
+<!-- MODAL -->
+<div id="modal"
+  class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-3">
+
+  <div class="bg-white rounded-2xl w-full max-w-3xl max-h-[95vh] overflow-auto">
+
+    <div class="bg-red-600 text-white p-4 rounded-t-2xl flex justify-between">
+      <div>
+        <h2 class="font-extrabold text-lg">✏️ Edit Data Rak</h2>
+        <p id="modalRak" class="text-xs opacity-90"></p>
+      </div>
+      <button onclick="closeModal()" class="text-2xl">×</button>
+    </div>
+
+    <div class="p-4">
+
+      <input type="hidden" id="editIndex">
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+        <div>
+          <label class="text-xs font-bold">PIC</label>
+          <input id="fPic" class="w-full border rounded-xl p-3 mt-1">
+        </div>
+
+        <div>
+          <label class="text-xs font-bold">Tanggal SO</label>
+          <input id="fDate" type="date"
+            class="w-full border rounded-xl p-3 mt-1">
+        </div>
+
+        <div>
+          <label class="text-xs font-bold">Sistem Bulan Lalu</label>
+          <input id="fSL" type="number"
+            class="w-full border rounded-xl p-3 mt-1">
+        </div>
+
+        <div>
+          <label class="text-xs font-bold">Fisik Bulan Lalu</label>
+          <input id="fFL" type="number"
+            class="w-full border rounded-xl p-3 mt-1">
+        </div>
+
+        <div>
+          <label class="text-xs font-bold">Sistem Bulan Ini</label>
+          <input id="fSI" type="number"
+            class="w-full border rounded-xl p-3 mt-1">
+        </div>
+
+        <div>
+          <label class="text-xs font-bold">Fisik Bulan Ini</label>
+          <input id="fFI" type="number"
+            class="w-full border rounded-xl p-3 mt-1">
+        </div>
+
+        <div>
+          <label class="text-xs font-bold">PLU</label>
+          <input id="fPLU"
+            class="w-full border rounded-xl p-3 mt-1">
+        </div>
+
+        <div>
+          <label class="text-xs font-bold">Nama Barang</label>
+          <input id="fItem"
+            class="w-full border rounded-xl p-3 mt-1">
+        </div>
+
+        <div>
+          <label class="text-xs font-bold">Qty Selisih</label>
+          <input id="fQty" type="number"
+            class="w-full border rounded-xl p-3 mt-1">
+        </div>
+
+        <div>
+          <label class="text-xs font-bold">Rp Selisih Barang</label>
+          <input id="fRpItem" type="number"
+            class="w-full border rounded-xl p-3 mt-1">
+        </div>
+
+      </div>
+
+      <div class="flex gap-2 mt-5">
+        <button onclick="saveEdit()"
+          class="flex-1 bg-red-600 text-white rounded-xl p-3 font-bold">
+          💾 Simpan
+        </button>
+
+        <button onclick="closeModal()"
+          class="flex-1 bg-gray-200 rounded-xl p-3 font-bold">
+          Batal
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+
+/* =========================================================
+   MASTER RAK
+========================================================= */
+
+const RAK_MASTER = [
+["AA1","REG BEVERAGES 1"],
+["AA2","REG BEVERAGES 2"],
+["AK1","CHILLER ADD EXPOSE"],
+["AY0","CHILLER PLUS COKE PREMIUM"],
+["AY1","CHILLER PLUS COKE PREMIUM"],
+["AY2","CHILLER PLUS COKE PREMIUM"],
+["AY3","CHILLER PLUS COKE PREMIUM"],
+["AY4","CHILLER PLUS COKE PREMIUM"],
+["AY5","CHILLER PLUS COKE PREMIUM"],
+["AY6","CHILLER PLUS COKE PREMIUM"],
+["AY7","CHILLER PLUS COKE PREMIUM"],
+["AY8","CHILLER PLUS COKE PREMIUM"],
+["AY9","CHILLER PLUS COKE PREMIUM"],
+["AYA","CHILLER PLUS COKE PREMIUM"],
+["AYB","CHILLER PLUS COKE PREMIUM"],
+["BA1","RAK BREAKFAST PRO 1"],
+["BA2","RAK BREAKFAST PRO 2"],
+["CB1","SN ACR ROYCO"],
+["CF1","SN WIRE RACK"],
+["CH1","ACR/TRAY STAPLLE 1"],
+["CR1","STAPLENEED PREM 1"],
+["CR2","STAPLENEED PREM 2"],
+["CR3","STAPLENEED PREM 3"],
+["CR4","STAPLENEED PREM 4"],
+["CX1","NOODLE PREMIUM 1"],
+["CX2","NOODLE PREMIUM 2"],
+["CX3","NOODLE PREMIUM 3"],
+["DD1","BISC+CONFECT-CSP PEZ CANDY"],
+["DJ1","BISC+CONFECT 1"],
+["DJ2","BISC+CONFECT 2"],
+["DJ3","BISC+CONFECT 3"],
+["DJ4","BISC+CONFECT 4"],
+["DJ5","BISC+CONFECT 5"],
+["DJ6","BISC+CONFECT 6"],
+["EB1","SNACK-HEALTHY"],
+["ED1","SNACK-WS SAMBOY 1"],
+["ED2","SNACK-WS SAMBOY 2"],
+["EE1","SNACK-SIDE WS SAMBOY"],
+["EF1","SNACK-CSP KIMBO"],
+["EG1","SNACK ADD - IMPULSE"],
+["EJ1","PRINGLES DBL"],
+["EM1","RAK AWUR NEW"],
+["EP1","SNACK PREM 1"],
+["EP2","SNACK PREM 2"],
+["EP3","SNACK PREM 3"],
+["EP4","SNACK PREM 4"],
+["EP5","SNACK PREM 5"],
+["FP1","MILK+DIAPERS 1"],
+["FP2","MILK+DIAPERS 2"],
+["FP3","MILK+DIAPERS 3"],
+["FP4","MILK+DIAPERS 4"],
+["FP5","MILK+DIAPERS 5"],
+["FP6","MILK+DIAPERS 6"],
+["FP7","MILK+DIAPERS 7"],
+["FP8","MILK+DIAPERS 8"],
+["FP9","MILK+DIAPERS 9"],
+["GA1","BW KIRI"],
+["GB1","BW TENGAH"],
+["GB2","BW KANAN"],
+["GD1","TP ELEKTRIK"],
+["HB1","MEJA COC ACC 1"],
+["HB2","MEJA COC ACC 2"],
+["HB3","MEJA COC ACC 3"],
+["HB4","MEJA COC ACC 4"],
+["HB5","MEJA COC ACC 5"],
+["HB6","MEJA COC ACC 6"],
+["HB7","MEJA COC ACC 7"],
+["HC1","COC-ACR SILVERQUEEN"],
+["HD1","COC-ACR CADBURY"],
+["HG1","COC-ACR KONDOM"],
+["HH1","COC-ACR STREPSILS"],
+["HI1","COC-ACR FISHERMAN'S"],
+["HN1","COC-ACR CHUPA MEJA ACC"],
+["HO1","COC-AREA MATERAI"],
+["HS1","RAK TRAY NDS"],
+["HT1","SOUR BELT 1M"],
+["JA1","TOYS"],
+["JC1","TOYS-STD ROTATING"],
+["JD1","PC NHB-ACR INSERT 1"],
+["KD1","PC NHB-ACR INSERT 1"],
+["KG1","PC NHB-ACR DECOR 1"],
+["KJ1","PC HB-ACR HC 1"],
+["KS1","PLU K ACR HAIR COLOR 3/KS1"],
+["KV1","PC PREMIUM 1"],
+["KV2","PC PREMIUM 2"],
+["KV3","PC PREMIUM 3"],
+["KV4","PC PREMIUM 4"],
+["KV5","PC PREMIUM 5"],
+["KV6","PC PREMIUM 6"],
+["LD1","TC PREMIUM 1"],
+["LD2","TC PREMIUM 2"],
+["MC1","MEDICINE-BABY-ACR 1"],
+["MD1","MEDICINE-BABY-ACR 2"],
+["ME1","MEDICINE-BABY-ACR 3"],
+["MI1","MEDICINE & BABY CARE PN1"],
+["MI2","MEDICINE & BABY CARE PN2"],
+["MI3","MEDICINE & BABY CARE PN3"],
+["NA1","FREEZER ICE WALLS 1"],
+["NE1","FREEZER ICE AICE 1"],
+["NF1","FREEZER ICE SHR CAMP GLICO 1"],
+["NK1","FL DD AICE"],
+["NK2","FL DD AICE"],
+["NP1","FREEZER NUG BENFARM 1"],
+["NV1","STD FREEZER NVA 1"],
+["NV2","STD FREEZER NVA 2"],
+["OA1","BREAD CORNER 1"],
+["OA2","BREAD CORNER 2"],
+["OC1","TRAY KEJU"],
+["PB1","RAK DISPLAY ACR NOODLE CUP 1"],
+["PB2","RAK DISPLAY ACR NOODLE CUP 2"],
+["PB3","RAK TAMPUNG ACR NOODLE CUP"],
+["PC1","RAK JOLLY TIME 1"],
+["PD1","RAK SHOWCASE IHB 1"],
+["PG1","RAK MENU MINUMAN 1"],
+["PL1","RAK RAW RPC RTD 1"],
+["PP1","RAK SHOWCASE GORENGAN"],
+["Q51","HH 1R"],
+["Q52","HH 2R"],
+["Q53","HH 3R NP"],
+["Q54","HH 4R NP"],
+["Q55","HH 5R NP"],
+["QA1","RAK TISSUE 1R"],
+["QB1","RAK SANDULT 1"],
+["QB2","RAK SANDULT 2"],
+["QE1","RAK MISCSTA 2R 1"],
+["QE2","RAK MISCSTA 2R 2"],
+["QF1","ACR MISC"],
+["QH1","WS JGD KARAKTER"],
+["QI1","WDU CSP STICKER"],
+["QI2","WS AKSESORIS"],
+["QJ1","WS AKSESORIS"],
+["QM1","SIDE WS AKSESORIS"],
+["QO1","AREA AMPLOP FESTIVE"],
+["QP1","FDU SRK KERTAS KADO"],
+["QS1","ACR STATIONARY BERTINGKAT"],
+["QU1","ACR KAMPER"],
+["QV1","GB AIRFRS+HUNDER"],
+["QW1","GB ALFA SNACK&MSKR"],
+["QY1","ACR PET FOOD NEW"],
+["ZR1","Z - FDU DISPLAY GALON"],
+["ZS1","Z - FDU AIR CUP KARTON"],
+["ZU1","FDU FOCUS TELUR"],
+["ZW1","FLOOR BAZAAR"]
+];
+
+/* =========================================================
+   DATA
+========================================================= */
+
+const STORAGE_KEY="jadwalSOAlfamartPremiumV2";
+
+let data=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
+
+if(!Array.isArray(data)){
+  data=RAK_MASTER.map(([kode,nama])=>({
+    kode,nama,
+    pic:"",
+    date:"",
+    sl:0,
+    fl:0,
+    si:0,
+    fi:0,
+    plu:"",
+    item:"",
+    qty:0,
+    rpItem:0
+  }));
+  saveData();
+}
+
+/* =========================================================
+   HELPER
+========================================================= */
+
+function saveData(){
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
+}
+
+function rupiah(n){
+  n=Number(n)||0;
+  return new Intl.NumberFormat("id-ID",{
+    style:"currency",
+    currency:"IDR",
+    maximumFractionDigits:0
+  }).format(n);
+}
+
+function num(n){
+  return Number(n)||0;
+}
+
+function esc(s){
+  return String(s??"")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+function selisihLalu(r){
+  return num(r.sl)-num(r.fl);
+}
+
+function selisihIni(r){
+  return num(r.si)-num(r.fi);
+}
+
+function perbandingan(r){
+  return selisihIni(r)-selisihLalu(r);
+}
+
+function isDone(r){
+  return !!r.date || num(r.si)!==0 || num(r.fi)!==0 ||
+         r.plu || r.item || num(r.qty)!==0 || num(r.rpItem)!==0;
+}
+
+function status(r){
+
+  if(!isDone(r)) return "BELUM";
+
+  const p=perbandingan(r);
+
+  if(p>0) return "NAIK";
+  if(p<0) return "TURUN";
+  return "STABIL";
+}
+
+function percentChange(r){
+
+  const old=Math.abs(selisihLalu(r));
+  const now=Math.abs(selisihIni(r));
+
+  if(old===0){
+    return now===0 ? 0 : 100;
+  }
+
+  return ((now-old)/old)*100;
+}
+
+function badgeStatus(s){
+
+  const cls={
+    NAIK:"naik",
+    TURUN:"turun",
+    STABIL:"stabil",
+    BELUM:"belum"
+  }[s]||"stabil";
+
+  return `<span class="badge ${cls}">${s}</span>`;
+}
+
+/* =========================================================
+   DASHBOARD
+========================================================= */
+
+function getMetrics(){
+
+  const total=data.length;
+
+  const done=data.filter(isDone).length;
+
+  const todo=total-done;
+
+  const diff=data.reduce((a,r)=>a+selisihIni(r),0);
+
+  let largestRack=null;
+
+  data.forEach(r=>{
+    const x=selisihIni(r);
+
+    if(x<0 && (!largestRack || x<largestRack.value)){
+      largestRack={
+        value:x,
+        rack:r
+      };
+    }
+  });
+
+  let largestPLU=null;
+
+  data.forEach(r=>{
+    const x=num(r.rpItem);
+
+    if(x<0 && (!largestPLU || x<largestPLU.value)){
+      largestPLU={
+        value:x,
+        rack:r
+      };
+    }
+  });
+
+  return {
+    total,
+    done,
+    todo,
+    diff,
+    largestRack,
+    largestPLU
+  };
+}
+
+/* =========================================================
+   NSB BTK
+========================================================= */
+
+function getCalc(){
+
+  const netSales=num(document.getElementById("netSales").value);
+  const btsb=num(document.getElementById("btsb").value)/100;
+
+  const btk=netSales*btsb;
+
+  const totalSelisihBarang=data.reduce(
+    (a,r)=>a+num(r.rpItem),0
+  );
+
+  const nsbFinal=btk-totalSelisihBarang;
+
+  return {
+    netSales,
+    btsb,
+    btk,
+    totalSelisihBarang,
+    nsbFinal
+  };
+}
+
+function updateDashboard(){
+
+  const m=getMetrics();
+  const c=getCalc();
+
+  document.getElementById("totalRak").textContent=m.total;
+  document.getElementById("selesai").textContent=m.done;
+  document.getElementById("belum").textContent=m.todo;
+
+  const pct=m.total ? (m.done/m.total)*100 : 0;
+
+  document.getElementById("persen").textContent=
+    pct.toFixed(1)+"%";
+
+  document.getElementById("progressText").textContent=
+    `${m.done} dari ${m.total} rak selesai`;
+
+  document.getElementById("progressPercent").textContent=
+    pct.toFixed(1)+"%";
+
+  document.getElementById("progressBar").style.width=
+    pct+"%";
+
+  const diffEl=document.getElementById("totalSelisih");
+  diffEl.textContent=rupiah(m.diff);
+  diffEl.className=
+    "text-xl font-extrabold mt-1 "+
+    (m.diff<0?"text-red-600":
+     m.diff>0?"text-green-600":"text-gray-700");
+
+  if(m.largestRack){
+
+    document.getElementById("rakTerbesar").textContent=
+      m.largestRack.rack.kode;
+
+    document.getElementById("rakTerbesarNominal").textContent=
+      rupiah(m.largestRack.value);
+
+  }else{
+
+    document.getElementById("rakTerbesar").textContent="-";
+    document.getElementById("rakTerbesarNominal").textContent="Rp 0";
+
+  }
+
+  if(m.largestPLU){
+
+    document.getElementById("pluTerbesar").textContent=
+      m.largestPLU.rack.plu || "-";
+
+    document.getElementById("pluTerbesarNominal").textContent=
+      rupiah(m.largestPLU.value);
+
+  }else{
+
+    document.getElementById("pluTerbesar").textContent="-";
+    document.getElementById("pluTerbesarNominal").textContent="Rp 0";
+
+  }
+
+  document.getElementById("btkCard").textContent=rupiah(c.btk);
+  document.getElementById("btkValue").textContent=rupiah(c.btk);
+
+  document.getElementById("selisihBarang").textContent=
+    rupiah(c.totalSelisihBarang);
+
+  document.getElementById("nsbCard").textContent=
+    rupiah(c.nsbFinal);
+
+  document.getElementById("nsbFinal").textContent=
+    rupiah(c.nsbFinal);
+
+  const statusNSB=c.nsbFinal>c.btk
+    ?"LEBIH TOLERANSI"
+    :"AMAN";
+
+  const nsbClass=c.nsbFinal>c.btk
+    ?"naik"
+    :"turun";
+
+  document.getElementById("nsbStatus").textContent=statusNSB;
+  document.getElementById("nsbStatus").className=
+    "badge "+nsbClass;
+
+  document.getElementById("nsbBadge").textContent=statusNSB;
+  document.getElementById("nsbBadge").className=
+    "badge "+nsbClass;
+
+  updateCharts();
+}
+
+/* =========================================================
+   TOP 5
+========================================================= */
+
+function renderTop5(){
+
+  const body=document.getElementById("top5Body");
+
+  const arr=[...data]
+    .filter(r=>num(r.rpItem)<0)
+    .sort((a,b)=>num(a.rpItem)-num(b.rpItem))
+    .slice(0,5);
+
+  if(!arr.length){
+
+    body.innerHTML=`
+      <tr>
+        <td colspan="8" class="p-6 text-center text-gray-400">
+          Belum ada data selisih barang.
+        </td>
+      </tr>
+    `;
+
+    return;
+  }
+
+  body.innerHTML=arr.map((r,i)=>`
+
+    <tr onclick="openModal(${data.indexOf(r)})"
+        class="cursor-pointer">
+
+      <td class="p-3 font-bold">${i+1}</td>
+
+      <td class="p-3 font-extrabold text-red-600">
+        ${esc(r.kode)}
+      </td>
+
+      <td class="p-3">${esc(r.nama)}</td>
+
+      <td class="p-3">${esc(r.plu)}</td>
+
+      <td class="p-3">${esc(r.item)}</td>
+
+      <td class="p-3 text-right">${num(r.qty)}</td>
+
+      <td class="p-3 text-right font-bold text-red-600">
+        ${rupiah(r.rpItem)}
+      </td>
+
+      <td class="p-3">${esc(r.pic)}</td>
+
+    </tr>
+
+  `).join("");
+}
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+function renderTable(){
+
+  const search=document.getElementById("search").value
+    .toLowerCase().trim();
+
+  const fs=document.getElementById("filterStatus").value;
+  const fp=document.getElementById("filterPIC").value;
+
+  const filtered=data.filter(r=>{
+
+    const cocokSearch=
+      !search ||
+      r.kode.toLowerCase().includes(search) ||
+      r.nama.toLowerCase().includes(search);
+
+    const cocokStatus=
+      !fs || status(r)===fs;
+
+    const cocokPIC=
+      !fp || r.pic===fp;
+
+    return cocokSearch && cocokStatus && cocokPIC;
+  });
+
+  document.getElementById("showCount").textContent=
+    filtered.length;
+
+  const body=document.getElementById("mainBody");
+
+  body.innerHTML=filtered.map((r,index)=>{
+
+    const realIndex=data.indexOf(r);
+
+    const sl=selisihLalu(r);
+    const si=selisihIni(r);
+    const pb=perbandingan(r);
+    const st=status(r);
+    const pc=percentChange(r);
+
+    return `
+
+      <tr onclick="openModal(${realIndex})"
+          class="cursor-pointer">
+
+        <td class="p-3 font-bold">${index+1}</td>
+
+        <td class="p-3">
+          <span class="font-extrabold text-red-600">
+            ${esc(r.kode)}
+          </span>
+        </td>
+
+        <td class="p-3 font-semibold">
+          ${esc(r.nama)}
+        </td>
+
+        <td class="p-3">
+          ${esc(r.pic)}
+        </td>
+
+        <td class="p-3">
+          ${esc(r.date)}
+        </td>
+
+        <td class="p-3 text-right">
+          ${rupiah(r.sl)}
+        </td>
+
+        <td class="p-3 text-right">
+          ${rupiah(r.fl)}
+        </td>
+
+        <td class="p-3 text-right font-bold
+          ${sl<0?"text-red-600":sl>0?"text-green-600":"text-gray-500"}">
+          ${rupiah(sl)}
+        </td>
+
+        <td class="p-3 text-right">
+          ${rupiah(r.si)}
+        </td>
+
+        <td class="p-3 text-right">
+          ${rupiah(r.fi)}
+        </td>
+
+        <td class="p-3 text-right font-bold
+          ${si<0?"text-red-600":si>0?"text-green-600":"text-gray-500"}">
+          ${rupiah(si)}
+        </td>
+
+        <td class="p-3 text-right font-bold
+          ${pb<0?"text-red-600":pb>0?"text-green-600":"text-gray-500"}">
+          ${rupiah(pb)}
+        </td>
+
+        <td class="p-3">
+          ${badgeStatus(st)}
+        </td>
+
+        <td class="p-3 text-right">
+          ${pc.toFixed(1)}%
+        </td>
+
+        <td class="p-3">
+          ${esc(r.plu)}
+        </td>
+
+        <td class="p-3">
+          ${esc(r.item)}
+        </td>
+
+        <td class="p-3 text-right">
+          ${num(r.qty)}
+        </td>
+
+        <td class="p-3 text-right font-bold
+          ${num(r.rpItem)<0?"text-red-600":
+            num(r.rpItem)>0?"text-green-600":"text-gray-500"}">
+          ${rupiah(r.rpItem)}
+        </td>
+
+      </tr>
+
+    `;
+  }).join("");
+}
+
+/* =========================================================
+   PIC FILTER
+========================================================= */
+
+function updatePICFilter(){
+
+  const select=document.getElementById("filterPIC");
+
+  const current=select.value;
+
+  const pics=[...new Set(
+    data.map(r=>r.pic.trim()).filter(Boolean)
+  )].sort();
+
+  select.innerHTML=
+    `<option value="">Semua PIC</option>`+
+    pics.map(p=>`
+      <option value="${esc(p)}">${esc(p)}</option>
+    `).join("");
+
+  if(pics.includes(current)){
+    select.value=current;
+  }
+}
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+function openModal(index){
+
+  const r=data[index];
+
+  document.getElementById("editIndex").value=index;
+  document.getElementById("modalRak").textContent=
+    `${r.kode} • ${r.nama}`;
+
+  document.getElementById("fPic").value=r.pic;
+  document.getElementById("fDate").value=r.date;
+  document.getElementById("fSL").value=r.sl;
+  document.getElementById("fFL").value=r.fl;
+  document.getElementById("fSI").value=r.si;
+  document.getElementById("fFI").value=r.fi;
+  document.getElementById("fPLU").value=r.plu;
+  document.getElementById("fItem").value=r.item;
+  document.getElementById("fQty").value=r.qty;
+  document.getElementById("fRpItem").value=r.rpItem;
+
+  document.getElementById("modal").classList.remove("hidden");
+}
+
+function closeModal(){
+  document.getElementById("modal").classList.add("hidden");
+}
+
+function saveEdit(){
+
+  const i=Number(document.getElementById("editIndex").value);
+
+  data[i].pic=document.getElementById("fPic").value.trim();
+  data[i].date=document.getElementById("fDate").value;
+  data[i].sl=num(document.getElementById("fSL").value);
+  data[i].fl=num(document.getElementById("fFL").value);
+  data[i].si=num(document.getElementById("fSI").value);
+  data[i].fi=num(document.getElementById("fFI").value);
+  data[i].plu=document.getElementById("fPLU").value.trim();
+  data[i].item=document.getElementById("fItem").value.trim();
+  data[i].qty=num(document.getElementById("fQty").value);
+  data[i].rpItem=num(document.getElementById("fRpItem").value);
+
+  saveData();
+
+  closeModal();
+
+  updatePICFilter();
+  renderTable();
+  renderTop5();
+  updateDashboard();
+}
+
+/* =========================================================
+   CHART
+========================================================= */
+
+let charts={};
+
+function destroyCharts(){
+
+  Object.values(charts).forEach(c=>{
+    try{c.destroy()}catch(e){}
+  });
+
+  charts={};
+}
+
+function updateCharts(){
+
+  destroyCharts();
+
+  const total=data.length;
+  const done=data.filter(isDone).length;
+  const todo=total-done;
+
+  const naik=data.filter(r=>status(r)==="NAIK").length;
+  const turun=data.filter(r=>status(r)==="TURUN").length;
+  const stabil=data.filter(r=>status(r)==="STABIL").length;
+  const belum=data.filter(r=>status(r)==="BELUM").length;
+
+  const lalu=data.reduce((a,r)=>a+selisihLalu(r),0);
+  const ini=data.reduce((a,r)=>a+selisihIni(r),0);
+
+  charts.progress=new Chart(
+    document.getElementById("progressChart"),
+    {
+      type:"doughnut",
+      data:{
+        labels:["Selesai","Belum"],
+        datasets:[{
+          data:[done,todo]
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{
+          legend:{position:"bottom"}
+        }
+      }
+    }
+  );
+
+  charts.compare=new Chart(
+    document.getElementById("compareChart"),
+    {
+      type:"bar",
+      data:{
+        labels:["Bulan Lalu","Bulan Ini"],
+        datasets:[{
+          label:"Selisih Rp",
+          data:[lalu,ini]
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false}
+        }
+      }
+    }
+  );
+
+  charts.status=new Chart(
+    document.getElementById("statusChart"),
+    {
+      type:"pie",
+      data:{
+        labels:["NAIK","TURUN","STABIL","BELUM"],
+        datasets:[{
+          data:[naik,turun,stabil,belum]
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{
+          legend:{position:"bottom"}
+        }
+      }
+    }
+  );
+
+  charts.selisih=new Chart(
+    document.getElementById("selisihChart"),
+    {
+      type:"bar",
+      data:{
+        labels:["Bulan Lalu","Bulan Ini"],
+        datasets:[{
+          label:"Total Selisih",
+          data:[lalu,ini]
+        }]
+      },
+      options:{
+        indexAxis:"y",
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false}
+        }
+      }
+    }
+  );
+}
+
+/* =========================================================
+   EXPORT CSV
+========================================================= */
+
+function csvEscape(value){
+
+  const s=String(value??"");
+
+  return `"${s.replaceAll('"','""')}"`;
+}
+
+function exportCSV(){
+
+  const c=getCalc();
+
+  const header=[
+    "No",
+    "Kode Rak",
+    "Nama Rak",
+    "PIC",
+    "Tanggal SO",
+    "Sistem Lalu",
+    "Fisik Lalu",
+    "Selisih Lalu",
+    "Sistem Ini",
+    "Fisik Ini",
+    "Selisih Ini",
+    "Perbandingan",
+    "Status",
+    "% Perubahan",
+    "PLU",
+    "Nama Barang",
+    "Qty Selisih",
+    "Rp Selisih Barang",
+    "Net Sales",
+    "BTSB",
+    "BTK",
+    "Total Selisih Barang",
+    "NSB Final"
+  ];
+
+  const rows=data.map((r,i)=>[
+    i+1,
+    r.kode,
+    r.nama,
+    r.pic,
+    r.date,
+    r.sl,
+    r.fl,
+    selisihLalu(r),
+    r.si,
+    r.fi,
+    selisihIni(r),
+    perbandingan(r),
+    status(r),
+    percentChange(r).toFixed(2)+"%",
+    r.plu,
+    r.item,
+    r.qty,
+    r.rpItem,
+    c.netSales,
+    (c.btsb*100).toFixed(2)+"%",
+    c.btk,
+    c.totalSelisihBarang,
+    c.nsbFinal
+  ]);
+
+  let csv=header.map(csvEscape).join(",")+"\n";
+
+  csv+=rows.map(row=>
+    row.map(csvEscape).join(",")
+  ).join("\n");
+
+  const blob=new Blob(
+    ["\ufeff"+csv],
+    {type:"text/csv;charset=utf-8;"}
+  );
+
+  const url=URL.createObjectURL(blob);
+
+  const a=document.createElement("a");
+
+  a.href=url;
+  a.download=
+    "Jadwal_SO_Rak_Alfamart_"+
+    new Date().toISOString().slice(0,10)+
+    ".csv";
+
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  URL.revokeObjectURL(url);
+}
+
+/* =========================================================
+   RESET
+========================================================= */
+
+function resetData(){
+
+  const ok=confirm(
+    "Yakin ingin menghapus seluruh data SO?\n\n"+
+    "Data master rak tetap ada, tetapi seluruh input SO akan dikosongkan."
+  );
+
+  if(!ok)return;
+
+  data=RAK_MASTER.map(([kode,nama])=>({
+    kode,nama,
+    pic:"",
+    date:"",
+    sl:0,
+    fl:0,
+    si:0,
+    fi:0,
+    plu:"",
+    item:"",
+    qty:0,
+    rpItem:0
+  }));
+
+  saveData();
+
+  updatePICFilter();
+  renderTable();
+  renderTop5();
+  updateDashboard();
+}
+
+/* =========================================================
+   INIT
+========================================================= */
+
+function init(){
+
+  document.getElementById("totalRak").textContent=data.length;
+
+  updatePICFilter();
+  renderTable();
+  renderTop5();
+  updateDashboard();
+}
+
+init();
+
+</script>
+
+</body>
+</html>
